@@ -1,0 +1,6 @@
+sentence-transformers
+scikit-learn
+hdbscan
+networkx
+weaviate-client
+pytest
