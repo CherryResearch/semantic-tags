@@ -24,7 +24,8 @@ The command now accepts a comma separated list of tags and additional options:
 - `--batch-size` and `--device` – control the embedding step.
 - `--weaviate-url` – persist the results to a running Weaviate instance.
 - `--summary-out` – write a JSON summary of tag counts and inferred cluster labels.
-- `--tree` – print a tree of nuggets grouped by source after processing.
+- `--tree` – print a concise topic summary per file.
+- `--train-classifier` – fine tune a simple classifier from labelled nuggets.
 
 ## Using as a Library
 
