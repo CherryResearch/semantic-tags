@@ -13,6 +13,7 @@ st_module.SentenceTransformer = lambda *a, **k: types.SimpleNamespace(
     encode=lambda texts, batch_size=32, show_progress_bar=False: [[0] * 2 for _ in texts],
     device=k.get("device", "cpu"),
     model_name=a[0] if a else "model",
+
 )
 sys.modules["sentence_transformers"] = st_module
 

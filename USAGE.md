@@ -33,6 +33,7 @@ The command now accepts a comma separated list of tags and additional options:
 - Each processed chunk includes speaker and emotion annotations.
 - A progress bar displays embedding progress and the tool prints the model and device in use.
 
+
 ## Using as a Library
 
 You can also import the `Pipeline` class and run it programmatically:
