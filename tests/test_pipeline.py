@@ -83,9 +83,12 @@ def test_pipeline_run(tmp_path):
     # Patch clustering functions to avoid heavy dependencies
     pipeline_mod.choose_k = lambda embeddings, k_min=2, k_max=None: 2
     pipeline_mod.cluster_embeddings = (
-        lambda embeddings, k: ([0] * len(embeddings), None)
+        lambda embeddings, k: (list(range(len(embeddings))), None)
     )
     graph = pipeline.run(tmp_path)
 
     assert graph.graph.number_of_nodes() > 0
     assert graph.graph.number_of_edges() > 0
+    summary = graph.summary()
+    assert summary["clusters"] == {"0": "recipe", "1": "anime"}
+    assert summary["cluster_count"] == 2
