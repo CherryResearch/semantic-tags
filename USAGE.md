@@ -22,10 +22,15 @@ The command now accepts a comma separated list of tags and additional options:
 
 - `--model` – choose the embedding model.
 - `--batch-size` and `--device` – control the embedding step.
+- `--tag-file` – load tags from a text file. If omitted the CLI will offer to use `default_tags.txt`.
+- `--infer-topics` – automatically infer a tag for each cluster, optionally using OpenAI when an API key is provided.
+- `--suggest-missing` – propose additional tags using a simple heuristic or OpenAI when `--openai-key` is supplied.
 - `--weaviate-url` – persist the results to a running Weaviate instance.
 - `--summary-out` – write a JSON summary of tag counts and inferred cluster labels.
 - `--tree` – print a concise topic summary per file.
 - `--train-classifier` – fine tune a simple classifier from labelled nuggets.
+- `--openai-key` – API key for OpenAI features (topic inference and missing tag suggestions).
+- Each processed chunk includes speaker and emotion annotations.
 
 ## Using as a Library
 

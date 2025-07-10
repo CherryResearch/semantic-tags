@@ -15,6 +15,8 @@ class Nugget:
     tags: List[str]
     cluster_id: int
     source: Path
+    speaker: str | None = None
+    emotion: str | None = None
 
 
 @dataclass
@@ -35,6 +37,8 @@ class TagGraph:
                 text=nugget.text,
                 cluster=nugget.cluster_id,
                 source=str(nugget.source),
+                speaker=nugget.speaker,
+                emotion=nugget.emotion,
             )
             for tag in nugget.tags:
                 tag_node = f"tag_{tag}"
