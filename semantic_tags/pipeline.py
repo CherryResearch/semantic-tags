@@ -6,6 +6,12 @@ from typing import List, Optional
 from .ingestion import load_transcripts
 from .chunking import split_into_nuggets
 from .diarization import diarize_and_chunk, detect_emotion
+
+try:
+    from tqdm.auto import tqdm
+except Exception:  # pragma: no cover - optional dependency
+    def tqdm(iterable, **kwargs):
+        return iterable
 from .vectorization import Embedder
 from .tagging import HeuristicTagger
 from .clustering import choose_k, cluster_embeddings
@@ -22,7 +28,10 @@ class Pipeline:
         tags: Optional[List[str]] = None,
         tag_file: Optional[Path] = None,
     ):
+        self.model_name = model_name
         self.embedder = Embedder(model_name=model_name, batch_size=batch_size, device=device)
+        self.device = device or getattr(self.embedder.model, "device", "cpu")
+
 
         if tags is None and tag_file is not None and Path(tag_file).exists():
             with open(tag_file, "r", encoding="utf-8") as f:
@@ -44,7 +53,9 @@ class Pipeline:
         sources: List[Path] = []
         speakers: List[str] = []
         emotions: List[str] = []
-        for text, rel_path in texts:
+
+        for text, rel_path in tqdm(texts, desc="Chunking"):
+
             for chunk, speaker in diarize_and_chunk(text):
                 ns = split_into_nuggets(chunk)
                 for n in ns:
@@ -52,6 +63,9 @@ class Pipeline:
                     sources.append(rel_path)
                     speakers.append(speaker)
                     emotions.append(detect_emotion(n))
+
+        print(f"Embedding {len(nuggets)} chunks...")
+
         embeddings = self.embedder.embed(nuggets)
         k = choose_k(embeddings)
         labels, _ = cluster_embeddings(embeddings, k)

@@ -31,6 +31,8 @@ The command now accepts a comma separated list of tags and additional options:
 - `--train-classifier` – fine tune a simple classifier from labelled nuggets.
 - `--openai-key` – API key for OpenAI features (topic inference and missing tag suggestions).
 - Each processed chunk includes speaker and emotion annotations.
+- A progress bar displays embedding progress and the tool prints the model and device in use.
+
 
 ## Using as a Library
 

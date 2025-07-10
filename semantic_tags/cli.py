@@ -64,6 +64,8 @@ def main():
         tag_file=args.tag_file,
     )
 
+    print(f"Using model {pipeline.model_name} on device {pipeline.device}")
+
     store = WeaviateStore(args.weaviate_url) if args.weaviate_url else None
 
     graph = pipeline.run(

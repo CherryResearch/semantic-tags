@@ -147,6 +147,9 @@ python -m semantic_tags.cli path/to/transcripts --tags=tag1,tag2 --summary-out s
 
 The CLI now supports custom tag lists via `--tags` or `--tag-file`, embedding batch size and device options, automatic topic inference with `--infer-topics`, and saving summaries or uploading to a Weaviate instance via `--weaviate-url`. You can also supply `--openai-key` to get suggested tags from the RAG loop or from topic inference, `--train-classifier` to fine tune a lightweight model, and `--tree` to print a concise topic summary per file.
 
+The tool prints the selected embedding model and device and shows a progress bar while embedding.
+
+
 ## Tests
 
 Run the test suite with:
