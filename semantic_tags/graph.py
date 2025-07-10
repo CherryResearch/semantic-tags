@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Any
+from collections import Counter, defaultdict
 
 import networkx as nx
 
@@ -52,16 +53,30 @@ class TagGraph:
     def to_networkx(self) -> nx.Graph:
         return self.graph
 
-    def summary(self) -> Dict[str, Dict[str, int]]:
-        """Return a summary of tags and cluster counts."""
+    def summary(self) -> Dict[str, Any]:
+        """Return a summary of tags, cluster counts and labels."""
         tags = {
             n[4:]: self.graph.nodes[n].get("count", 0)
             for n, d in self.graph.nodes(data=True)
             if d.get("type") == "tag"
         }
-        clusters = {
-            d["cluster"]
-            for _, d in self.graph.nodes(data=True)
-            if d.get("type") == "nugget"
+
+        cluster_members = defaultdict(list)
+        for node, data in self.graph.nodes(data=True):
+            if data.get("type") == "nugget":
+                cluster_members[data["cluster"]].append(node)
+
+        cluster_labels: Dict[str, str | None] = {}
+        for cid, nug_nodes in cluster_members.items():
+            counter: Counter[str] = Counter()
+            for n in nug_nodes:
+                for neigh in self.graph.neighbors(n):
+                    if self.graph.nodes[neigh].get("type") == "tag":
+                        counter[neigh[4:]] += 1
+            cluster_labels[str(cid)] = counter.most_common(1)[0][0] if counter else None
+
+        return {
+            "tag_counts": tags,
+            "cluster_count": len(cluster_members),
+            "clusters": cluster_labels,
         }
-        return {"tag_counts": tags, "cluster_count": len(clusters)}

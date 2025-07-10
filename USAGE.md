@@ -23,7 +23,7 @@ The command now accepts a comma separated list of tags and additional options:
 - `--model` – choose the embedding model.
 - `--batch-size` and `--device` – control the embedding step.
 - `--weaviate-url` – persist the results to a running Weaviate instance.
-- `--summary-out` – write a JSON summary of tags and cluster count.
+- `--summary-out` – write a JSON summary of tag counts and inferred cluster labels.
 - `--tree` – print a tree of nuggets grouped by source after processing.
 
 ## Using as a Library

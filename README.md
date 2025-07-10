@@ -143,7 +143,7 @@ Install dependencies via `pip install -r requirements.txt`. Then run:
 python -m semantic_tags.cli path/to/transcripts --tags=tag1,tag2 --summary-out summary.json
 ```
 
-The CLI now supports custom tag lists, embedding batch size and device options, and saving summaries or uploading to a Weaviate instance via `--weaviate-url`.
+The CLI now supports custom tag lists, embedding batch size and device options, and saving summaries (including the automatic label detected for each cluster) or uploading to a Weaviate instance via `--weaviate-url`.
 
 ## Tests
 
