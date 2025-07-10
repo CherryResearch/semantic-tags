@@ -10,11 +10,20 @@ def main():
     parser.add_argument("path", type=Path, help="File or directory of transcripts")
     parser.add_argument("--model", type=str, default="sentence-transformers/all-MiniLM-L6-v2")
     parser.add_argument("--tags", type=str, help="Comma separated list of tags")
+    parser.add_argument("--tag-file", type=Path, help="Path to text file with default tags")
+    parser.add_argument(
+        "--infer-topics", action="store_true", help="Automatically infer topic tags"
+    )
+    parser.add_argument(
+        "--suggest-missing",
+        action="store_true",
+        help="Suggest additional tags using a heuristic or OpenAI",
+    )
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--device", type=str)
     parser.add_argument("--weaviate-url", type=str)
     parser.add_argument("--summary-out", type=Path)
-    parser.add_argument("--openai-key", type=str, help="API key to suggest additional tags")
+    parser.add_argument("--openai-key", type=str, help="API key for OpenAI features")
     parser.add_argument(
         "--train-classifier",
         action="store_true",
@@ -27,13 +36,35 @@ def main():
     )
     args = parser.parse_args()
 
+    if args.openai_key and not args.suggest_missing:
+        resp = input("Use OpenAI to suggest missing tags? [y/N] ").strip().lower()
+        if resp.startswith("y"):
+            args.suggest_missing = True
+
+    if not args.tags and args.tag_file is None:
+        default_file = Path(__file__).with_name("default_tags.txt")
+        if default_file.exists():
+            resp = input(f"No tags provided. Use default list at {default_file}? [y/N] ")
+            if resp.strip().lower().startswith("y"):
+                args.tag_file = default_file
+
+    if args.infer_topics and not args.openai_key:
+        key = input(
+            "OpenAI API key for topic inference (leave empty to use local heuristics): "
+        ).strip()
+        if key:
+            args.openai_key = key
+
     tag_list = args.tags.split(",") if args.tags else None
     pipeline = Pipeline(
         model_name=args.model,
         batch_size=args.batch_size,
         device=args.device,
         tags=tag_list,
+        tag_file=args.tag_file,
     )
+
+    print(f"Using model {pipeline.model_name} on device {pipeline.device}")
 
     store = WeaviateStore(args.weaviate_url) if args.weaviate_url else None
 
@@ -41,11 +72,22 @@ def main():
         args.path,
         summary_path=args.summary_out,
         store=store,
+        infer_topics=args.infer_topics,
+        topic_api_key=args.openai_key if args.infer_topics else None,
     )
-    print(f"Graph has {graph.graph.number_of_nodes()} nodes and {graph.graph.number_of_edges()} edges")
+    print(
+        f"Graph has {graph.graph.number_of_nodes()} nodes and {graph.graph.number_of_edges()} edges"
+    )
 
-    if args.openai_key:
+    if args.suggest_missing:
         from .rag import suggest_missing_tags
+
+        if not args.openai_key:
+            key = input(
+                "OpenAI API key for tag suggestion (leave empty to use heuristics): "
+            ).strip()
+            if key:
+                args.openai_key = key
 
         try:
             suggestions = suggest_missing_tags(graph, args.openai_key)
@@ -85,12 +127,10 @@ def main():
                     print_tree(val, indent + 1)
                 else:
                     topics = ", ".join(
-                        f"{count} {topic}" for topic, count in sorted(val["topics"].items(), key=lambda x: -x[1])
+                        f"{count} {topic}"
+                        for topic, count in sorted(val["topics"].items(), key=lambda x: -x[1])
                     )
-                    print(
-                        "    " * indent
-                        + f"{key} ({val['nugget_count']} chunks; {topics})"
-                    )
+                    print("    " * indent + f"{key} ({val['nugget_count']} chunks; {topics})")
 
         print_tree(build_tree(summary))
 
