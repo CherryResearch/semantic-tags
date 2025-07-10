@@ -64,6 +64,30 @@ weaviate_mod = types.ModuleType('weaviate')
 weaviate_mod.Client = lambda *a, **k: types.SimpleNamespace(schema=types.SimpleNamespace(get=lambda: {"classes": []}), data_object=types.SimpleNamespace(create=lambda *args, **kwargs: None))
 sys.modules['weaviate'] = weaviate_mod
 
+# Stub openai module used by rag functionality
+openai_mod = types.ModuleType('openai')
+openai_mod.ChatCompletion = types.SimpleNamespace(
+    create=lambda **k: {"choices": [{"message": {"content": "[]"}}]}
+)
+sys.modules['openai'] = openai_mod
+
+# Stub sklearn modules used by classifier
+linear_mod = types.ModuleType('sklearn.linear_model')
+linear_mod.LogisticRegression = lambda *a, **k: types.SimpleNamespace(
+    fit=lambda X, y: None,
+    classes_=['recipe'],
+)
+fe_text_mod = types.ModuleType('sklearn.feature_extraction.text')
+fe_text_mod.TfidfVectorizer = lambda *a, **k: types.SimpleNamespace(
+    fit_transform=lambda texts: texts,
+    transform=lambda texts: texts,
+)
+fe_mod = types.ModuleType('sklearn.feature_extraction')
+fe_mod.text = fe_text_mod
+sys.modules['sklearn.linear_model'] = linear_mod
+sys.modules['sklearn.feature_extraction'] = fe_mod
+sys.modules['sklearn.feature_extraction.text'] = fe_text_mod
+
 from semantic_tags import pipeline as pipeline_mod
 from semantic_tags.pipeline import Pipeline
 
@@ -92,3 +116,28 @@ def test_pipeline_run(tmp_path):
     summary = graph.summary()
     assert summary["clusters"] == {"0": "recipe", "1": "anime"}
     assert summary["cluster_count"] == 2
+
+
+def test_suggest_missing_tags():
+    from semantic_tags.graph import TagGraph
+    from semantic_tags.rag import suggest_missing_tags
+
+    tg = TagGraph()
+    tg.graph.add_node("tag_recipe", type="tag", count=2)
+    tg.graph.add_node("tag_anime", type="tag", count=1)
+
+    suggestions = suggest_missing_tags(tg, "dummy")
+    assert suggestions == []
+
+
+def test_train_tag_classifier():
+    from semantic_tags.graph import TagGraph
+    from semantic_tags.classifier import train_tag_classifier
+
+    tg = TagGraph()
+    tg.graph.add_node("nugget_0", type="nugget", text="I love this recipe", cluster=0, source="a.md")
+    tg.graph.add_node("tag_recipe", type="tag", count=1)
+    tg.graph.add_edge("nugget_0", "tag_recipe")
+
+    result = train_tag_classifier(tg)
+    assert result is not None

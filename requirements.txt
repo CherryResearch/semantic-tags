@@ -4,3 +4,4 @@ hdbscan
 networkx
 weaviate-client
 pytest
+openai

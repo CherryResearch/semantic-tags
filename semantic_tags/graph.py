@@ -80,3 +80,27 @@ class TagGraph:
             "cluster_count": len(cluster_members),
             "clusters": cluster_labels,
         }
+
+    def conversation_summary(self) -> Dict[str, Dict[str, Any]]:
+        """Return topic counts per source file."""
+        base_summary = self.summary()
+        labels = base_summary.get("clusters", {})
+
+        topic_counts: defaultdict[str, defaultdict[str, int]] = defaultdict(lambda: defaultdict(int))
+        nugget_totals: Counter[str] = Counter()
+
+        for node, data in self.graph.nodes(data=True):
+            if data.get("type") == "nugget":
+                src = data["source"]
+                cluster = str(data["cluster"])
+                label = labels.get(cluster, f"cluster_{cluster}")
+                topic_counts[src][label] += 1
+                nugget_totals[src] += 1
+
+        result: Dict[str, Dict[str, Any]] = {}
+        for src, topics in topic_counts.items():
+            result[src] = {
+                "nugget_count": nugget_totals[src],
+                "topics": dict(topics),
+            }
+        return result

@@ -14,10 +14,16 @@ def main():
     parser.add_argument("--device", type=str)
     parser.add_argument("--weaviate-url", type=str)
     parser.add_argument("--summary-out", type=Path)
+    parser.add_argument("--openai-key", type=str, help="API key to suggest additional tags")
+    parser.add_argument(
+        "--train-classifier",
+        action="store_true",
+        help="Fine tune a classifier from tagged nuggets",
+    )
     parser.add_argument(
         "--tree",
         action="store_true",
-        help="Print nuggets grouped by source in a tree",
+        help="Print a concise tree of topics per source",
     )
     args = parser.parse_args()
 
@@ -38,40 +44,55 @@ def main():
     )
     print(f"Graph has {graph.graph.number_of_nodes()} nodes and {graph.graph.number_of_edges()} edges")
 
+    if args.openai_key:
+        from .rag import suggest_missing_tags
+
+        try:
+            suggestions = suggest_missing_tags(graph, args.openai_key)
+            if suggestions:
+                print("Possible missing tags:", ", ".join(suggestions))
+        except Exception as e:
+            print(f"Error during tag suggestion: {e}")
+
+    if args.train_classifier:
+        from .classifier import train_tag_classifier
+
+        model = train_tag_classifier(graph)
+        if model is None:
+            print("Not enough labelled data to train classifier")
+        else:
+            _, clf = model
+            print(f"Trained classifier on {len(clf.classes_)} tags")
+
     if args.tree:
-        from collections import defaultdict
+        summary = graph.conversation_summary()
 
-        nuggets_by_source = defaultdict(list)
-        for node, data in graph.graph.nodes(data=True):
-            if data.get("type") == "nugget":
-                nuggets_by_source[data["source"]].append(data["text"])
-
-        def build_tree(mapping):
-            tree = {}
-            for src, nuggets in mapping.items():
+        def build_tree(summary_dict):
+            tree: dict = {}
+            for src, info in summary_dict.items():
                 parts = Path(src).parts
                 d = tree
                 for part in parts[:-1]:
                     d = d.setdefault(part, {})
-                d.setdefault(parts[-1], []).extend(nuggets)
+                d[parts[-1]] = info
             return tree
 
         def print_tree(d, indent=0):
             for key in sorted(d):
                 val = d[key]
-                if isinstance(val, dict):
+                if isinstance(val, dict) and "topics" not in val:
                     print("    " * indent + f"{key}/")
                     print_tree(val, indent + 1)
                 else:
-                    print("    " * indent + key)
-                    for n in val:
-                        preview = n.strip().replace("\n", " ")
-                        if len(preview) > 40:
-                            preview = preview[:40] + "..."
-                        print("    " * (indent + 1) + preview)
+                    topics = ", ".join(
+                        f"{count} {topic}" for topic, count in sorted(val["topics"].items(), key=lambda x: -x[1])
+                    )
+                    print(
+                        "    " * indent
+                        + f"{key} ({val['nugget_count']} chunks; {topics})"
+                    )
 
-        tree = build_tree(nuggets_by_source)
-        print_tree(tree)
+        print_tree(build_tree(summary))
 
 
 if __name__ == "__main__":
