@@ -53,9 +53,7 @@ class Pipeline:
         sources: List[Path] = []
         speakers: List[str] = []
         emotions: List[str] = []
-
         for text, rel_path in tqdm(texts, desc="Chunking"):
-
             for chunk, speaker in diarize_and_chunk(text):
                 ns = split_into_nuggets(chunk)
                 for n in ns:

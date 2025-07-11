@@ -149,7 +149,6 @@ The CLI now supports custom tag lists via `--tags` or `--tag-file`, embedding ba
 
 The tool prints the selected embedding model and device and shows a progress bar while embedding.
 
-
 ## Tests
 
 Run the test suite with:

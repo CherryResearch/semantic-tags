@@ -8,6 +8,7 @@ sys.modules["numpy"].random = types.SimpleNamespace(
     rand=lambda *a, **k: [[0] * 2 for _ in range(a[0])]
 )
 
+
 st_module = types.ModuleType("sentence_transformers")
 st_module.SentenceTransformer = lambda *a, **k: types.SimpleNamespace(
     encode=lambda texts, batch_size=32, show_progress_bar=False: [[0] * 2 for _ in texts],
