@@ -6,6 +6,7 @@ from typing import List, Optional
 from .ingestion import load_transcripts
 from .chunking import split_into_nuggets
 from .diarization import diarize_and_chunk, detect_emotion
+
 try:
     from tqdm.auto import tqdm
 except Exception:  # pragma: no cover - optional dependency
@@ -30,6 +31,7 @@ class Pipeline:
         self.model_name = model_name
         self.embedder = Embedder(model_name=model_name, batch_size=batch_size, device=device)
         self.device = device or getattr(self.embedder.model, "device", "cpu")
+
 
         if tags is None and tag_file is not None and Path(tag_file).exists():
             with open(tag_file, "r", encoding="utf-8") as f:
@@ -59,7 +61,9 @@ class Pipeline:
                     sources.append(rel_path)
                     speakers.append(speaker)
                     emotions.append(detect_emotion(n))
+
         print(f"Embedding {len(nuggets)} chunks...")
+
         embeddings = self.embedder.embed(nuggets)
         k = choose_k(embeddings)
         labels, _ = cluster_embeddings(embeddings, k)
