@@ -1,4 +1,5 @@
 import argparse
+import os
 from pathlib import Path
 
 from .pipeline import Pipeline
@@ -8,7 +9,7 @@ from .config import AVAILABLE_MODELS, load_config, save_config, download_model, 
 
 def main():
     parser = argparse.ArgumentParser(description="Run semantic tagging pipeline")
-    parser.add_argument("path", type=Path, help="File or directory of transcripts")
+    parser.add_argument("path", nargs="?", type=Path, help="File or directory of transcripts")
     parser.add_argument("--model", type=str, help="Model alias or path")
     parser.add_argument("--model-dir", type=Path, help="Directory to store models")
     parser.add_argument("--download-model", type=str, help="Download model and exit")
@@ -41,13 +42,22 @@ def main():
     )
     args = parser.parse_args()
 
+    # Load default API key from environment if available
+    if not args.openai_key:
+        args.openai_key = os.getenv("OPENAI_API_KEY")
+
     config = load_config(args.config)
     if args.model_dir:
         config["model_dir"] = str(args.model_dir)
 
     if args.list_models:
+        print(f"Model directory: {config['model_dir']}")
+        if args.weaviate_url:
+            print(f"Weaviate URL: {args.weaviate_url}")
+        print("Recommended models:")
         for alias, name in AVAILABLE_MODELS.items():
-            print(f"{alias}: {name}")
+            print(f"  {alias}: {name} (download with --download-model {alias})")
+        print("Other sentence-transformers models are also supported.")
         return
 
     if args.download_model:
@@ -56,6 +66,9 @@ def main():
         print(f"Downloaded {model_name} to {path}")
         save_config(config, args.config)
         return
+
+    if args.path is None:
+        parser.error("the following arguments are required: path")
 
     if args.openai_key and not args.suggest_missing:
         resp = input("Use OpenAI to suggest missing tags? [y/N] ").strip().lower()
@@ -88,6 +101,8 @@ def main():
     )
 
     print(f"Using model {pipeline.model_name} on device {pipeline.device}")
+    if args.weaviate_url:
+        print(f"Weaviate URL: {args.weaviate_url}")
 
     store = WeaviateStore(args.weaviate_url) if args.weaviate_url else None
 
