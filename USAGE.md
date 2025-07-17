@@ -21,7 +21,7 @@ python -m semantic_tags.cli /path/to/transcripts --tags=tag1,tag2 --batch-size 1
 The command now accepts a comma separated list of tags and additional options:
 
 - `--model` – choose the embedding model (alias or path).
-- `--list-models` – list recommended models.
+- `--list-models` – list recommended models. Can be used without a path to show the model directory.
 - `--download-model` – download a model to the local `models/` directory.
 - `--model-dir` – override the directory used to look for downloaded models.
 - `--batch-size` and `--device` – control the embedding step.
@@ -33,6 +33,7 @@ The command now accepts a comma separated list of tags and additional options:
 - `--tree` – print a concise topic summary per file.
 - `--train-classifier` – fine tune a simple classifier from labelled nuggets.
 - `--openai-key` – API key for OpenAI features (topic inference and missing tag suggestions).
+- If omitted, the tool looks for an `OPENAI_API_KEY` environment variable.
 - Each processed chunk includes speaker and emotion annotations.
 - A progress bar displays embedding progress and the tool prints the model and device in use.
 

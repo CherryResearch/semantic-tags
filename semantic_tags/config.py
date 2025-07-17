@@ -15,6 +15,9 @@ DEFAULT_CONFIG = {
 AVAILABLE_MODELS = {
     "minilm": "sentence-transformers/all-MiniLM-L6-v2",
     "mpnet": "sentence-transformers/all-mpnet-base-v2",
+    "distilroberta": "sentence-transformers/all-distilroberta-v1",
+    "multiqa-mpnet": "sentence-transformers/multi-qa-mpnet-base-dot-v1",
+    "multiqa-minilm": "sentence-transformers/multi-qa-MiniLM-L6-cos-v1",
 }
 
 
