@@ -20,7 +20,10 @@ python -m semantic_tags.cli /path/to/transcripts --tags=tag1,tag2 --batch-size 1
 
 The command now accepts a comma separated list of tags and additional options:
 
-- `--model` – choose the embedding model.
+- `--model` – choose the embedding model (alias or path).
+- `--list-models` – list recommended models.
+- `--download-model` – download a model to the local `models/` directory.
+- `--model-dir` – override the directory used to look for downloaded models.
 - `--batch-size` and `--device` – control the embedding step.
 - `--tag-file` – load tags from a text file. If omitted the CLI will offer to use `default_tags.txt`.
 - `--infer-topics` – automatically infer a tag for each cluster, optionally using OpenAI when an API key is provided.

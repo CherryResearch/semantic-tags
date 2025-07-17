@@ -13,6 +13,7 @@ except Exception:  # pragma: no cover - optional dependency
     def tqdm(iterable, **kwargs):
         return iterable
 from .vectorization import Embedder
+from .config import DEFAULT_CONFIG
 from .tagging import HeuristicTagger
 from .clustering import choose_k, cluster_embeddings
 from .graph import Nugget, TagGraph
@@ -22,14 +23,20 @@ from .weaviate_store import WeaviateStore
 class Pipeline:
     def __init__(
         self,
-        model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
+        model_name: str = DEFAULT_CONFIG["default_model"],
         batch_size: int = 32,
         device: Optional[str] = None,
         tags: Optional[List[str]] = None,
         tag_file: Optional[Path] = None,
+        model_dir: Optional[Path] = None,
     ):
         self.model_name = model_name
-        self.embedder = Embedder(model_name=model_name, batch_size=batch_size, device=device)
+        self.embedder = Embedder(
+            model_name=model_name,
+            batch_size=batch_size,
+            device=device,
+            model_dir=model_dir,
+        )
         self.device = device or getattr(self.embedder.model, "device", "cpu")
 
 
