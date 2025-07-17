@@ -3,12 +3,17 @@ from pathlib import Path
 
 from .pipeline import Pipeline
 from .weaviate_store import WeaviateStore
+from .config import AVAILABLE_MODELS, load_config, save_config, download_model, select_model
 
 
 def main():
     parser = argparse.ArgumentParser(description="Run semantic tagging pipeline")
     parser.add_argument("path", type=Path, help="File or directory of transcripts")
-    parser.add_argument("--model", type=str, default="sentence-transformers/all-MiniLM-L6-v2")
+    parser.add_argument("--model", type=str, help="Model alias or path")
+    parser.add_argument("--model-dir", type=Path, help="Directory to store models")
+    parser.add_argument("--download-model", type=str, help="Download model and exit")
+    parser.add_argument("--list-models", action="store_true", help="List available models")
+    parser.add_argument("--config", type=Path, help="Path to configuration file")
     parser.add_argument("--tags", type=str, help="Comma separated list of tags")
     parser.add_argument("--tag-file", type=Path, help="Path to text file with default tags")
     parser.add_argument(
@@ -36,6 +41,22 @@ def main():
     )
     args = parser.parse_args()
 
+    config = load_config(args.config)
+    if args.model_dir:
+        config["model_dir"] = str(args.model_dir)
+
+    if args.list_models:
+        for alias, name in AVAILABLE_MODELS.items():
+            print(f"{alias}: {name}")
+        return
+
+    if args.download_model:
+        model_name = select_model(args.download_model)
+        path = download_model(model_name, Path(config["model_dir"]))
+        print(f"Downloaded {model_name} to {path}")
+        save_config(config, args.config)
+        return
+
     if args.openai_key and not args.suggest_missing:
         resp = input("Use OpenAI to suggest missing tags? [y/N] ").strip().lower()
         if resp.startswith("y"):
@@ -56,12 +77,14 @@ def main():
             args.openai_key = key
 
     tag_list = args.tags.split(",") if args.tags else None
+    model_name = select_model(args.model) if args.model else config["default_model"]
     pipeline = Pipeline(
-        model_name=args.model,
+        model_name=model_name,
         batch_size=args.batch_size,
         device=args.device,
         tags=tag_list,
         tag_file=args.tag_file,
+        model_dir=Path(config["model_dir"]),
     )
 
     print(f"Using model {pipeline.model_name} on device {pipeline.device}")
@@ -134,6 +157,9 @@ def main():
 
         print_tree(build_tree(summary))
 
+    save_config(config, args.config)
+
 
 if __name__ == "__main__":
     main()
+

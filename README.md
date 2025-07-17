@@ -15,7 +15,7 @@ Ingestion – Pull raw transcripts (Markdown, JSON, etc.).
 
 Chunking – Split into semantically coherent "nuggets" (rule‑based + language‑model fallback).
 
-Vectorisation – Embed each nugget (e.g. sentence-transformers/all-MiniLM-L6-v2 or local OpenAI compatible model).
+Vectorisation – Embed each nugget (default: sentence-transformers/all-mpnet-base-v2). Models can be downloaded to a local `models/` directory using the CLI.
 
 Initial Tagging
 
@@ -145,7 +145,7 @@ Install dependencies via `pip install -r requirements.txt`. Then run:
 python -m semantic_tags.cli path/to/transcripts --tags=tag1,tag2 --summary-out summary.json
 ```
 
-The CLI now supports custom tag lists via `--tags` or `--tag-file`, embedding batch size and device options, automatic topic inference with `--infer-topics`, and saving summaries or uploading to a Weaviate instance via `--weaviate-url`. You can also supply `--openai-key` to get suggested tags from the RAG loop or from topic inference, `--train-classifier` to fine tune a lightweight model, and `--tree` to print a concise topic summary per file.
+The CLI now supports custom tag lists via `--tags` or `--tag-file`, embedding batch size and device options, automatic topic inference with `--infer-topics`, and saving summaries or uploading to a Weaviate instance via `--weaviate-url`. You can also supply `--openai-key` to get suggested tags from the RAG loop or from topic inference, `--train-classifier` to fine tune a lightweight model, and `--tree` to print a concise topic summary per file. Use `--list-models` to see recommended embedding models, `--download-model MODEL` to fetch one into `models/`, or `--model-dir` to specify a custom location.
 
 The tool prints the selected embedding model and device and shows a progress bar while embedding.
 
