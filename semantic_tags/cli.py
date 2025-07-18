@@ -4,7 +4,14 @@ from pathlib import Path
 
 from .pipeline import Pipeline
 from .weaviate_store import WeaviateStore
-from .config import AVAILABLE_MODELS, load_config, save_config, download_model, select_model
+from .config import (
+    AVAILABLE_MODELS,
+    load_config,
+    save_config,
+    download_model,
+    select_model,
+    DEFAULT_CONFIG_PATH,
+)
 
 
 def main():
@@ -14,6 +21,7 @@ def main():
     parser.add_argument("--model-dir", type=Path, help="Directory to store models")
     parser.add_argument("--download-model", type=str, help="Download model and exit")
     parser.add_argument("--list-models", action="store_true", help="List available models")
+    parser.add_argument("--show-config", action="store_true", help="Display effective configuration")
     parser.add_argument("--config", type=Path, help="Path to configuration file")
     parser.add_argument("--tags", type=str, help="Comma separated list of tags")
     parser.add_argument("--tag-file", type=Path, help="Path to text file with default tags")
@@ -47,8 +55,16 @@ def main():
         args.openai_key = os.getenv("OPENAI_API_KEY")
 
     config = load_config(args.config)
+    config_path = Path(os.getenv("SEMANTIC_TAGS_CONFIG", args.config or DEFAULT_CONFIG_PATH))
     if args.model_dir:
         config["model_dir"] = str(args.model_dir)
+
+    if args.show_config:
+        print(f"Configuration path: {config_path}")
+        for key, val in config.items():
+            print(f"{key}: {val}")
+        if args.path is None:
+            return
 
     if args.list_models:
         print(f"Model directory: {config['model_dir']}")
