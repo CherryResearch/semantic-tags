@@ -33,7 +33,7 @@ def main():
         action="store_true",
         help="Suggest additional tags using a heuristic or OpenAI",
     )
-    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--batch-size", type=int)
     parser.add_argument("--device", type=str)
     parser.add_argument("--weaviate-url", type=str)
     parser.add_argument("--summary-out", type=Path)
@@ -58,6 +58,12 @@ def main():
     config_path = Path(os.getenv("SEMANTIC_TAGS_CONFIG", args.config or DEFAULT_CONFIG_PATH))
     if args.model_dir:
         config["model_dir"] = str(args.model_dir)
+    if args.batch_size is not None:
+        config["batch_size"] = args.batch_size
+    if args.device is not None:
+        config["device"] = args.device
+    if args.weaviate_url is not None:
+        config["weaviate_url"] = args.weaviate_url
 
     if args.show_config:
         print(f"Configuration path: {config_path}")
@@ -68,8 +74,8 @@ def main():
 
     if args.list_models:
         print(f"Model directory: {config['model_dir']}")
-        if args.weaviate_url:
-            print(f"Weaviate URL: {args.weaviate_url}")
+        if config.get("weaviate_url"):
+            print(f"Weaviate URL: {config['weaviate_url']}")
         print("Recommended models:")
         for alias, name in AVAILABLE_MODELS.items():
             print(f"  {alias}: {name} (download with --download-model {alias})")
@@ -109,18 +115,18 @@ def main():
     model_name = select_model(args.model) if args.model else config["default_model"]
     pipeline = Pipeline(
         model_name=model_name,
-        batch_size=args.batch_size,
-        device=args.device,
+        batch_size=config.get("batch_size", 32),
+        device=config.get("device"),
         tags=tag_list,
         tag_file=args.tag_file,
         model_dir=Path(config["model_dir"]),
     )
 
     print(f"Using model {pipeline.model_name} on device {pipeline.device}")
-    if args.weaviate_url:
-        print(f"Weaviate URL: {args.weaviate_url}")
+    if config.get("weaviate_url"):
+        print(f"Weaviate URL: {config['weaviate_url']}")
 
-    store = WeaviateStore(args.weaviate_url) if args.weaviate_url else None
+    store = WeaviateStore(config["weaviate_url"]) if config.get("weaviate_url") else None
 
     graph = pipeline.run(
         args.path,

@@ -10,6 +10,9 @@ DEFAULT_CONFIG_PATH = REPO_ROOT / "model_config.json"
 DEFAULT_CONFIG = {
     "model_dir": str(REPO_ROOT / "models"),
     "default_model": "sentence-transformers/all-mpnet-base-v2",
+    "batch_size": 32,
+    "device": None,
+    "weaviate_url": None,
 }
 
 AVAILABLE_MODELS = {
@@ -30,6 +33,8 @@ def load_config(path: Path | None = None) -> dict:
         data = {}
     cfg = DEFAULT_CONFIG.copy()
     cfg.update(data)
+    for key, val in DEFAULT_CONFIG.items():
+        cfg.setdefault(key, val)
     return cfg
 
 
@@ -37,7 +42,9 @@ def save_config(config: dict, path: Path | None = None) -> None:
     config_path = Path(os.getenv("SEMANTIC_TAGS_CONFIG", path or DEFAULT_CONFIG_PATH))
     config_path.parent.mkdir(parents=True, exist_ok=True)
     with open(config_path, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=2)
+        data = DEFAULT_CONFIG.copy()
+        data.update(config)
+        json.dump(data, f, indent=2)
 
 
 def download_model(model_name: str, model_dir: Path) -> Path:

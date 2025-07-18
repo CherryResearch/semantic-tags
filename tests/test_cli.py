@@ -70,3 +70,5 @@ def test_cli_show_config(capsys):
     captured = capsys.readouterr()
     assert str(DEFAULT_CONFIG_PATH) in captured.out
     assert "model_dir" in captured.out
+    assert "batch_size" in captured.out
+    assert "device" in captured.out
