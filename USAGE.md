@@ -24,6 +24,7 @@ The command now accepts a comma separated list of tags and additional options:
 - `--list-models` – list recommended models. Can be used without a path to show the model directory.
 - `--download-model` – download a model to the local `models/` directory.
 - `--model-dir` – override the directory used to look for downloaded models.
+- `--show-config` – display the configuration path and settings.
 - `--batch-size` and `--device` – control the embedding step.
 - `--tag-file` – load tags from a text file. If omitted the CLI will offer to use `default_tags.txt`.
 - `--infer-topics` – automatically infer a tag for each cluster, optionally using OpenAI when an API key is provided.
