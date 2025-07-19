@@ -5,3 +5,6 @@ networkx
 weaviate-client
 pytest
 openai
+fastopic
+bertopic
+pillow

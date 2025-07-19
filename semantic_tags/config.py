@@ -10,6 +10,7 @@ DEFAULT_CONFIG_PATH = REPO_ROOT / "model_config.json"
 DEFAULT_CONFIG = {
     "model_dir": str(REPO_ROOT / "models"),
     "default_model": "sentence-transformers/all-mpnet-base-v2",
+    "default_vision_model": "sentence-transformers/clip-ViT-B-32",
     "batch_size": 32,
     "device": None,
     "weaviate_url": None,
@@ -21,6 +22,7 @@ AVAILABLE_MODELS = {
     "distilroberta": "sentence-transformers/all-distilroberta-v1",
     "multiqa-mpnet": "sentence-transformers/multi-qa-mpnet-base-dot-v1",
     "multiqa-minilm": "sentence-transformers/multi-qa-MiniLM-L6-cos-v1",
+    "clip": "sentence-transformers/clip-ViT-B-32",
 }
 
 
@@ -63,4 +65,16 @@ def download_model(model_name: str, model_dir: Path) -> Path:
 def select_model(name: str) -> str:
     """Return the full model name for a known alias."""
     return AVAILABLE_MODELS.get(name, name)
+
+
+def list_devices() -> list[str]:
+    """Return a list of available torch devices."""
+    try:
+        import torch
+    except Exception:  # pragma: no cover - torch optional
+        return ["cpu"]
+    devices = ["cpu"]
+    if torch.cuda.is_available():
+        devices.extend([f"cuda:{i}" for i in range(torch.cuda.device_count())])
+    return devices
 

@@ -72,3 +72,4 @@ def test_cli_show_config(capsys):
     assert "model_dir" in captured.out
     assert "batch_size" in captured.out
     assert "device" in captured.out
+    assert "vision_model" in captured.out

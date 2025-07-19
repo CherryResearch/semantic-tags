@@ -27,6 +27,9 @@ The command now accepts a comma separated list of tags and additional options:
 - `--show-config` – display the configuration path and settings.
 - Configuration values for `model_dir`, `batch_size`, `device` and `weaviate_url` are written to `model_config.json` so they persist across runs.
 - `--batch-size` and `--device` – control the embedding step.
+- `--vision-model` – choose the vision embedding model for images.
+- `--list-devices` – show available devices and exit.
+- `--topic-model` – use `fastopic` or `bertopic` when inferring topics.
 - `--tag-file` – load tags from a text file. If omitted the CLI will offer to use `default_tags.txt`.
 - `--infer-topics` – automatically infer a tag for each cluster, optionally using OpenAI when an API key is provided.
 - `--suggest-missing` – propose additional tags using a simple heuristic or OpenAI when `--openai-key` is supplied.
