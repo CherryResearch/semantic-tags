@@ -32,6 +32,8 @@ The command now accepts a comma separated list of tags and additional options:
 - `--suggest-missing` – propose additional tags using a simple heuristic or OpenAI when `--openai-key` is supplied.
 - `--weaviate-url` – persist the results to a running Weaviate instance.
 - `--summary-out` – write a JSON summary of tag counts and inferred cluster labels.
+  The summary now includes a `metadata` section recording the embedding model,
+  batch size, device, chosen `k` and the Weaviate URL if used.
 - `--tree` – print a concise topic summary per file.
 - `--train-classifier` – fine tune a simple classifier from labelled nuggets.
 - `--openai-key` – API key for OpenAI features (topic inference and missing tag suggestions).

@@ -93,11 +93,36 @@ class Pipeline:
         ]
         tg.add_nuggets(nugget_objs)
         tg.co_occurrence_edges()
+        model_obj = getattr(self.embedder, "model", None)
+        metadata = {
+            "embedding_model": self.model_name,
+            "embedding_dim": getattr(
+                model_obj, "get_sentence_embedding_dimension", lambda: None
+            )()
+            if model_obj
+            else None,
+            "quantized": bool(getattr(model_obj, "quantization_config", None)) if model_obj else False,
+            "device": str(self.device),
+            "batch_size": getattr(self.embedder, "batch_size", None),
+            "k": k,
+        }
+        if store is not None:
+            metadata["weaviate_url"] = getattr(store, "url", None)
         if summary_path is not None:
             with open(summary_path, "w", encoding="utf-8") as f:
                 import json
+                import subprocess
+                try:
+                    commit = subprocess.check_output(
+                        ["git", "rev-parse", "--short", "HEAD"],
+                        cwd=str(Path(__file__).resolve().parents[1]),
+                        text=True,
+                    ).strip()
+                except Exception:
+                    commit = None
+                metadata["pipeline_version"] = commit
 
-                json.dump(tg.summary(), f, indent=2)
+                json.dump(tg.summary(metadata), f, indent=2)
         if store is not None:
             store.add_tag_graph(tg)
         return tg

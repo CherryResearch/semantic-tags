@@ -57,8 +57,12 @@ class TagGraph:
     def to_networkx(self) -> nx.Graph:
         return self.graph
 
-    def summary(self) -> Dict[str, Any]:
-        """Return a summary of tags, cluster counts and labels."""
+    def summary(self, metadata: Dict[str, Any] | None = None) -> Dict[str, Any]:
+        """Return a summary of tags, cluster counts and labels.
+
+        Optional metadata is merged under a ``metadata`` key for logging
+        processing parameters and embedding details.
+        """
         tags = {
             n[4:]: self.graph.nodes[n].get("count", 0)
             for n, d in self.graph.nodes(data=True)
@@ -79,11 +83,14 @@ class TagGraph:
                         counter[neigh[4:]] += 1
             cluster_labels[str(cid)] = counter.most_common(1)[0][0] if counter else None
 
-        return {
+        result = {
             "tag_counts": tags,
             "cluster_count": len(cluster_members),
             "clusters": cluster_labels,
         }
+        if metadata:
+            result["metadata"] = metadata
+        return result
 
     def conversation_summary(self) -> Dict[str, Dict[str, Any]]:
         """Return topic counts per source file."""
