@@ -151,6 +151,12 @@ If `OPENAI_API_KEY` is set in your environment, it will be used automatically wh
 
 The tool prints the selected embedding model and device and shows a progress bar while embedding.
 
+When `--summary-out` is used the JSON file now contains a `metadata` section with
+details about the embedding model, device, batch size, chosen number of clusters
+(`k`), the pipeline's git commit hash and the configured Weaviate URL when one is
+used. This allows results to be reproduced later even if models or parameters
+change.
+
 ## Tests
 
 Run the test suite with:

@@ -10,6 +10,7 @@ class WeaviateStore:
     """Simple wrapper to persist TagGraph objects in Weaviate."""
 
     def __init__(self, url: str = "http://localhost:8080"):
+        self.url = url
         self.client = weaviate.Client(url)
         self.init_schema()
 
