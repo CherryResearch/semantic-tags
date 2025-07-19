@@ -18,9 +18,11 @@ def main():
     parser = argparse.ArgumentParser(description="Run semantic tagging pipeline")
     parser.add_argument("path", nargs="?", type=Path, help="File or directory of transcripts")
     parser.add_argument("--model", type=str, help="Model alias or path")
+    parser.add_argument("--vision-model", type=str, help="Vision model alias or path")
     parser.add_argument("--model-dir", type=Path, help="Directory to store models")
     parser.add_argument("--download-model", type=str, help="Download model and exit")
     parser.add_argument("--list-models", action="store_true", help="List available models")
+    parser.add_argument("--list-devices", action="store_true", help="List available devices")
     parser.add_argument("--show-config", action="store_true", help="Display effective configuration")
     parser.add_argument("--config", type=Path, help="Path to configuration file")
     parser.add_argument("--tags", type=str, help="Comma separated list of tags")
@@ -37,6 +39,7 @@ def main():
     parser.add_argument("--device", type=str)
     parser.add_argument("--weaviate-url", type=str)
     parser.add_argument("--summary-out", type=Path)
+    parser.add_argument("--topic-model", choices=["fastopic", "bertopic"], help="Use a topic modelling backend")
     parser.add_argument("--openai-key", type=str, help="API key for OpenAI features")
     parser.add_argument(
         "--train-classifier",
@@ -62,6 +65,14 @@ def main():
         config["batch_size"] = args.batch_size
     if args.device is not None:
         config["device"] = args.device
+    if args.vision_model:
+        config["vision_model"] = args.vision_model
+    if args.list_devices:
+        from .config import list_devices
+        print("Available devices:")
+        for d in list_devices():
+            print(f"  {d}")
+        return
     if args.weaviate_url is not None:
         config["weaviate_url"] = args.weaviate_url
 
@@ -113,8 +124,10 @@ def main():
 
     tag_list = args.tags.split(",") if args.tags else None
     model_name = select_model(args.model) if args.model else config["default_model"]
+    vision_model = select_model(args.vision_model) if args.vision_model else config.get("vision_model", config.get("default_vision_model", ""))
     pipeline = Pipeline(
         model_name=model_name,
+        vision_model_name=vision_model,
         batch_size=config.get("batch_size", 32),
         device=config.get("device"),
         tags=tag_list,
@@ -134,6 +147,7 @@ def main():
         store=store,
         infer_topics=args.infer_topics,
         topic_api_key=args.openai_key if args.infer_topics else None,
+        topic_model=args.topic_model,
     )
     print(
         f"Graph has {graph.graph.number_of_nodes()} nodes and {graph.graph.number_of_edges()} edges"

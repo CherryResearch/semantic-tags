@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Optional
 
-from .ingestion import load_transcripts
+from .ingestion import load_transcripts, load_files
 from .chunking import split_into_nuggets
 from .diarization import diarize_and_chunk, detect_emotion
 
@@ -12,8 +12,8 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     def tqdm(iterable, **kwargs):
         return iterable
-from .vectorization import Embedder
-from .config import DEFAULT_CONFIG
+from .vectorization import Embedder, VisionEmbedder
+from .config import DEFAULT_CONFIG, list_devices
 from .tagging import HeuristicTagger
 from .clustering import choose_k, cluster_embeddings
 from .graph import Nugget, TagGraph
@@ -24,6 +24,7 @@ class Pipeline:
     def __init__(
         self,
         model_name: str = DEFAULT_CONFIG["default_model"],
+        vision_model_name: str = DEFAULT_CONFIG["default_vision_model"],
         batch_size: int = 32,
         device: Optional[str] = None,
         tags: Optional[List[str]] = None,
@@ -37,7 +38,14 @@ class Pipeline:
             device=device,
             model_dir=model_dir,
         )
+        self.vision_embedder = VisionEmbedder(
+            model_name=vision_model_name,
+            batch_size=batch_size,
+            device=device,
+            model_dir=model_dir,
+        )
         self.device = device or getattr(self.embedder.model, "device", "cpu")
+        self.available_devices = list_devices()
 
 
         if tags is None and tag_file is not None and Path(tag_file).exists():
@@ -54,32 +62,53 @@ class Pipeline:
         store: Optional[WeaviateStore] = None,
         infer_topics: bool = False,
         topic_api_key: Optional[str] = None,
+        topic_model: Optional[str] = None,
     ) -> TagGraph:
-        texts = load_transcripts(path)
-        nuggets: List[str] = []
+        items = load_files(path)
+        nuggets: List[str | Path] = []
+        types: List[str] = []
         sources: List[Path] = []
-        speakers: List[str] = []
-        emotions: List[str] = []
-        for text, rel_path in tqdm(texts, desc="Chunking"):
-            for chunk, speaker in diarize_and_chunk(text):
-                ns = split_into_nuggets(chunk)
-                for n in ns:
-                    nuggets.append(n)
-                    sources.append(rel_path)
-                    speakers.append(speaker)
-                    emotions.append(detect_emotion(n))
+        speakers: List[str | None] = []
+        emotions: List[str | None] = []
+        for content, rel_path, is_image in tqdm(items, desc="Chunking"):
+            if is_image:
+                nuggets.append(content)
+                types.append("image")
+                sources.append(rel_path)
+                speakers.append(None)
+                emotions.append(None)
+            else:
+                for chunk, speaker in diarize_and_chunk(content):
+                    ns = split_into_nuggets(chunk)
+                    for n in ns:
+                        nuggets.append(n)
+                        types.append("text")
+                        sources.append(rel_path)
+                        speakers.append(speaker)
+                        emotions.append(detect_emotion(n))
 
         print(f"Embedding {len(nuggets)} chunks...")
 
-        embeddings = self.embedder.embed(nuggets)
-        k = choose_k(embeddings)
-        labels, _ = cluster_embeddings(embeddings, k)
+        embeddings = []
+        for nug, typ in tqdm(list(zip(nuggets, types)), desc="Embedding"):
+            if typ == "image":
+                embeddings.append(self.vision_embedder.embed([nug])[0])
+            else:
+                embeddings.append(self.embedder.embed([nug])[0])
+        embeddings_array = embeddings
+        k = choose_k(embeddings_array)
+        labels, _ = cluster_embeddings(embeddings_array, k)
         tag_lists = self.tagger.tag(nuggets)
 
         if infer_topics:
             from .topic_inference import infer_cluster_tags
 
-            cluster_tags = infer_cluster_tags(nuggets, labels, api_key=topic_api_key)
+            cluster_tags = infer_cluster_tags(
+                nuggets,
+                labels,
+                api_key=topic_api_key,
+                method=topic_model,
+            )
             tag_lists = [
                 tags + [cluster_tags.get(int(label), f"cluster_{label}")]
                 for tags, label in zip(tag_lists, labels)
@@ -96,6 +125,7 @@ class Pipeline:
         model_obj = getattr(self.embedder, "model", None)
         metadata = {
             "embedding_model": self.model_name,
+            "vision_model": self.vision_embedder.model.model_name,
             "embedding_dim": getattr(
                 model_obj, "get_sentence_embedding_dimension", lambda: None
             )()
@@ -105,6 +135,7 @@ class Pipeline:
             "device": str(self.device),
             "batch_size": getattr(self.embedder, "batch_size", None),
             "k": k,
+            "available_devices": self.available_devices,
         }
         if store is not None:
             metadata["weaviate_url"] = getattr(store, "url", None)
